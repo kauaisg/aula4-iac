@@ -21,6 +21,12 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
         run: echo "AWS credentials configuradas"
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::891377101229:role/LabRole
+          aws-region: us-east-1
         
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
