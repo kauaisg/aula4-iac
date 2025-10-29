@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    bucket = "iac-fiap-backend"
+    bucket = "fiap-iac-terraform-state"
     key    = "terraform.tfstate"
     region = "us-east-1"
   }
