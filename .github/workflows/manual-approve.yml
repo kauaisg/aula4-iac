@@ -1,0 +1,36 @@
+name: Terraform - PROD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  terraform-prod:
+    environment:
+      name: production
+      url: https://console.aws.amazon.com
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -var-file="prod.tfvars"
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var-file="prod.tfvars"

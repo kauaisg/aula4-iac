@@ -1,0 +1,1 @@
+bucket_name = "fiap-iac-terraform-github-actions"
