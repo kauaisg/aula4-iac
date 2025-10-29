@@ -1,47 +1,62 @@
+# .github/workflows/terraform.yml
 name: Terraform CI/CD
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main", "develop" ]
   pull_request:
-    branches:
-      - main
-
-env:
-  TF_VERSION: '1.6.6'
-  AWS_REGION: 'us-east-1'
-
+    branches: [ "main" ]
+    
+permissions:
+  id-token: write       
+  contents: read       
+  
 jobs:
   terraform:
-    name: 'Terraform Plan & Apply'
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout do código
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
+        
+      - name: Configure AWS Credentials (Secrets)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: echo "AWS credentials configuradas"
 
-    - name: Setup do Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: ${{ env.TF_VERSION }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+        run: echo "AWS credentials configuradas"
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
 
-    - name: Configurar credenciais AWS
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: Terraform Init
+        run: terraform init
 
-    - name: Inicializar Terraform
-      run: terraform init
+      - name: Terraform Validate
+        run: terraform validate
 
-    - name: Validar código
-      run: terraform validate
+      - name: Terraform Plan Dev
+        if: github.ref == 'refs/heads/develop'
+        run: terraform plan -var-file="dev.tfvars"
 
-    - name: Terraform Plan
-      run: terraform plan -var-file="terraform.tfvars"
+      - name: Terraform Apply Dev
+        if: github.ref == 'refs/heads/develop'
+        run: terraform apply -auto-approve -var-file="dev.tfvars"
 
-    - name: Terraform Apply
-      if: github.ref == 'refs/heads/main'
-      run: terraform apply -auto-approve -var-file="terraform.tfvars"
+      - name: Terraform Plan Prod
+        if: github.ref == 'refs/heads/main'
+        run: terraform plan -var-file="prod.tfvars"
+
+      - name: Terraform Apply Prod
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve -var-file="prod.tfvars"
